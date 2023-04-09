@@ -2,6 +2,7 @@ import torch
 import cv2
 import numpy as np
 import os
+import config
 
 def save_figure(X, save_path, categ=None):
 	
@@ -16,7 +17,7 @@ def save_figure(X, save_path, categ=None):
 	img_h  = X.shape[1]
 	img_w  = X.shape[2]
 	img_c  = X.shape[3]
-	C      = 8
+	C      = config.num_col
 	R      = N // C
 	h, w   = 0, 0
 	canvas = np.ones((R*img_h, C*img_w, img_c), dtype=np.uint8)

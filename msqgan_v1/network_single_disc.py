@@ -55,7 +55,9 @@ class Generator(nn.Module):
 											  bias=False
 										    )),
 								nn.BatchNorm2d(num_features=out_channels[idx]),
+								# nn.InstanceNorm2d(num_features=out_channels[idx]),
 								nn.LeakyReLU()
+								# nn.ELU()
 								))
 
 		self.layers.append(nn.Sequential(nn.utils.spectral_norm(
@@ -111,12 +113,15 @@ class Discriminator(nn.Module):
 											  bias=False
 										    ),
 								nn.BatchNorm2d(num_features=out_channels[idx]),
+								# nn.InstanceNorm2d(num_features=out_channels[idx]),
 								nn.LeakyReLU()
+								# nn.ELU()
 								))
 
 		self.out = nn.Linear(
 								in_features=1*8*8,
-								out_features=1
+								out_features=1,
+								bias=False
 							)
 
 	def forward(self, x, c=None):
