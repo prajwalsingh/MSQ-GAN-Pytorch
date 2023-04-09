@@ -1,6 +1,6 @@
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 import config
 import torch
 from torch.utils.data import DataLoader
@@ -13,6 +13,9 @@ from save_figure import vis
 from diff_augment import DiffAugment
 from losses import disc_hinge, gen_hinge
 from network_single_disc import ImageGAN
+import lpips
+
+loss_fn_vgg = lpips.LPIPS(net='vgg').to(config.device)
 
 def train_step_dis(model, optimizer, images, noise_1):
 	
@@ -44,9 +47,9 @@ def train_step_gen(model, optimizer, images, noise_1, noise_2):
 	# dis_score_fake_2 = model.dis(gen_image_2_aug)
 
 	gen_loss   = gen_hinge(dis_score_fake_1) #+ gen_hinge(dis_score_fake_2)
-	# mode_loss  = torch.divide(torch.mean(torch.abs(torch.subtract(gen_image_2, gen_image_1))),\
+	# mode_loss  = torch.divide(torch.mean(torch.abs(torch.subtract(gen_image_2_aug, gen_image_1_aug))),\
 	# 						 torch.mean(torch.abs(torch.subtract(noise_2, noise_1))))
-	total_loss = 1.0 * gen_loss #+ 1.0 * mode_loss
+	total_loss = 1.0 * gen_loss #+ 0.02 * torch.mean(loss_fn_vgg(images, gen_image_1)) #+ 0.2 * mode_loss
 	total_loss.backward()
 	optimizer['gen'].step()
 
@@ -100,7 +103,7 @@ if __name__ == '__main__':
 
 	image_dataloader     = DataLoader(image_dataset,\
 									  batch_size=config.batch_size,\
-									  shuffle=False,\
+									  shuffle=True,\
 									  num_workers=config.num_workers,\
 									  drop_last=False
 									 )
@@ -114,14 +117,22 @@ if __name__ == '__main__':
 	model.gen = torch.nn.DataParallel(model.gen).to(config.device)
 	model.dis = torch.nn.DataParallel(model.dis).to(config.device)
 	optimizer = {
+					# 'gen': torch.optim.AdamW(\
+					# 						list(model.gen.parameters()),\
+					# 						lr=config.lr,\
+					# 						betas=(config.beta_1, config.beta_2)),
+					# 'dis': torch.optim.AdamW(\
+					# 						list(model.dis.parameters()),\
+					# 						lr=config.lr,\
+					# 						betas=(config.beta_1, config.beta_2))
 					'gen': torch.optim.Adam(\
 											list(model.gen.parameters()),\
 											lr=config.lr,\
-											betas=(0.2, 0.5)),
+											betas=(config.beta_1, config.beta_2)),
 					'dis': torch.optim.Adam(\
 											list(model.dis.parameters()),\
 											lr=config.lr,\
-											betas=(0.2, 0.5))
+											betas=(config.beta_1, config.beta_2))
 				}
 
 	dir_info  = natsorted(glob('EXPERIMENT_*'))

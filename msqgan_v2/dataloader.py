@@ -52,10 +52,11 @@ class ImageDataset(Dataset):
 		return len(self.images_path)
 
 	def __getitem__(self, idx):
-		img = np.float32(cv2.resize(cv2.imread(self.images_path[idx], 1), (config.image_height, config.image_width)))
+		img = cv2.cvtColor(cv2.imread(self.images_path[idx], 1), cv2.COLOR_BGR2RGB)
+		img = np.float32(cv2.resize(img, (config.image_height, config.image_width)))
 		img = (img - 127.5) / 127.5
 		img = np.transpose(img, (2, 0, 1))
-		img = torch.from_numpy(img).to(torch.float32)
+		# img = torch.from_numpy(np.load(self.images_path[idx], allow_pickle=True), device=torch.device(config.device)).to(torch.float32)
 		return img
 
 
